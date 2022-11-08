@@ -39,17 +39,16 @@ server.listen(3000, function () {
 
 app.route('/').get(async function (req, res) {
 	if (!req.session.isLoggedIn) {
-		console.log('I ran in home');
 		res.render('login');
 		return;
 	}
 	let alarmData = await userModel.find({ email: req.session.email });
 	email = req.session.email;
-	// console.log('Inside home one : ', alarmData[0].alarms);
+	// console.log('Inside home one : ', alarmData[0].alarms);]
 	let alarms = alarmData[0].alarms;
 	currentUser = req.session.currentUser;
 	res.render('home', { email: req.session.email, alarms });
-	startTimers(req.session.currentUser);
+	// startTimers(req.session.currentUser);
 });
 
 app.route('/setAlarm').post(alarmData);
@@ -124,68 +123,6 @@ var alarmArr = [];
 var socketMap = {};
 // app.route('/startTimers').get();
 
-async function startTimers(user) {
-	console.log('Req body : ', user);
-	io.on('connection', async (socket) => {
-		console.log('User connnected with socket ');
-		// console.log(socket.id);
-		let data = await userModel.find({ _id: user });
-		alarmArr = [];
-		alarmArr.push(...data[0].alarms);
-		console.log('Alarm arr : ', alarmArr);
-		console.log('EMail in start timers : ', email);
-
-		if (socketMap[email] == undefined) {
-			socketMap[email] = [socket.id];
-		} else {
-			socket.join(socketMap[email]);
-			// socketMap[email].push(socket.id);
-		}
-		// socket.join(socketMap[email]);
-		console.log('socket map : ', socketMap);
-		socket.on('start', () => {
-			console.log('Inside user-data emit ');
-			// alarmArr.push(body);
-			console.log('Alarm array : ', alarmArr);
-			alarmArr.forEach((alarm) => {
-				console.log('Inside for each : ', alarm.isExpired);
-				if (!alarm.isExpired) {
-					console.log('THE FOREACH RAN ');
-					let alarmID = setInterval(() => {
-						console.log(alarmArr);
-						let date = new Date();
-						let year = date.getFullYear();
-						let month = date.getMonth() + 1;
-						let day = date.getDate();
-						let hour = date.getHours();
-						let minutes = date.getMinutes();
-						console.log(
-							alarm.userYear + '==' + year,
-							alarm.userHour + '==' + hour,
-							alarm.userDay + '==' + day,
-							alarm.userMonth + '==' + month,
-							alarm.userHour + '==' + hour,
-							alarm.userMinute + '==' + minutes
-						);
-						if (
-							alarm.userYear == year &&
-							alarm.userHour == hour &&
-							alarm.userDay == day &&
-							alarm.userMonth == month &&
-							alarm.userHour == hour &&
-							alarm.userMinute == minutes
-						) {
-							console.log('Alarm time');
-							io.to(socketMap[email]).emit('To-client', 'WAKE UP!');
-							clearInterval(alarmID);
-						}
-					}, 1000);
-				}
-			});
-		});
-	});
-}
-
 //functions
 function checkUser(email, callback) {
 	userModel
@@ -209,55 +146,88 @@ function getUser(email, password, callback) {
 			callback('Incorrect details');
 		});
 }
+let arr = [];
+io.on('connection', async (socket) => {
+	// let socketMap = {};
+	console.log('User connected');
+	// let email;
+	socket.once('user', (email) => {
+		// email = userEmail;
+		console.log('email in socket ', email);
+
+		if (socketMap[email] == undefined) {
+			socketMap[email] = [socket.id];
+		} else {
+			socket.join(socketMap[email]);
+		}
+
+		console.log('EMAFAIDSFJ : ', email);
+
+		console.log(socketMap);
+		let interval = setInterval(async () => {
+			let data = await userModel.find({ email: email });
+			arr = [];
+			if (data[0].alarms !== undefined) {
+				arr.push(...data[0].alarms);
+			}
+
+			arr.forEach(async (alarm) => {
+				let id;
+				id = alarm._id.toString().split('"')[0];
+				if (alarm.isExpired == false) {
+					let result = checkExpired(alarm);
+					console.log('Result : ', result);
+					if (result) {
+						alarm.isExpired = result;
+						console.log('Inside result section ');
+						// console.log('ID : ', id);
+
+						await userModel
+							.find({ 'alarms._id': id })
+							.update(
+								{ 'alarms.isExpired': false },
+								{ $set: { 'alarms.$.isExpired': true } }
+							)
+							.then((err, data) => {
+								if (err) {
+									console.log('Error new : ', err.alarms);
+								} else {
+									console.log('Data  new : ', data);
+								}
+							});
+					}
+				}
+				if (alarm.isExpired == false) {
+					let result = checkAlarm(alarm);
+					console.log('Alarm status : ', result);
+					if (result) {
+						await userModel
+							.find({ 'alarms._id': id })
+							.update(
+								{ 'alarms.isExpired': false },
+								{ $set: { 'alarms.$.isExpired': true } }
+							);
+						console.log('Email in current : ', email);
+						io.to(socketMap[email]).emit('To-client', 'WAKE UP!');
+					}
+				}
+				// console.log('Alarm after : ', alarm);
+			});
+
+			// let result = check(arr);
+
+			// console.log('User alarms : ', arr);
+		}, 1000);
+	});
+});
 
 async function alarmData(req, res) {
-	// console.log('Inside alarmData function : ', req.body);
-	// let alarmObj = await userModel.find({ email: email });
 	let alarmObj = await userModel
 		.find({ _id: req.session.currentUser })
 		.updateOne({
 			$push: { alarms: req.body },
 		});
 	alarmArr.push(req.body);
-	// console.log('Inside alarmobj : ', alarmObj);
-	// let userData = {
-	// 	userYear: parseInt(req.body.userYear),
-	// 	userMonth: parseInt(req.body.userMonth),
-	// 	userDay: parseInt(req.body.userDay),
-	// 	userHour: parseInt(req.body.userHour),
-	// 	userMinute: parseInt(req.body.userMinute),
-	// };
-	// console.log('Parse data : ', userData);
-	// let alarmID = setInterval(() => {
-	// 	console.log('Hi');
-	// 	let date = new Date();
-	// 	let year = date.getFullYear();
-	// 	let month = date.getMonth() + 1;
-	// 	let day = date.getDay() - 1;
-	// 	let hour = date.getHours();
-	// 	let minutes = date.getMinutes();
-	// 	console.log(
-	// 		userData.userYear == year,
-	// 		userData.userHour == hour,
-	// 		userData.userDay == day,
-	// 		userData.userMonth == month,
-	// 		userData.userHour == hour,
-	// 		userData.userMinute == minutes
-	// 	);
-	// 	if (
-	// 		userData.userYear == year &&
-	// 		userData.userHour == hour &&
-	// 		userData.userDay == day &&
-	// 		userData.userMonth == month &&
-	// 		userData.userHour == hour &&
-	// 		userData.userMinute == minutes
-	// 	) {
-	// 		console.log('Alarm time');
-	// 		clearInterval(alarmID);
-	// 		io.emit('receive-message', 'WAKE UP!');
-	// 		res.render('home');
-	// 	}
-	// }, 1000);
 }
 
 function logoutUser(req, res) {
@@ -267,7 +237,6 @@ function logoutUser(req, res) {
 
 async function deleteAlarm(req, res) {
 	let id = req.params.id;
-	console.log(req.session.currentUser);
 	let userId = req.session.currentUser;
 	await userModel
 		.find({ _id: userId })
@@ -275,7 +244,49 @@ async function deleteAlarm(req, res) {
 	let alarms = await userModel.find({ _id: userId });
 	alarmArr = [];
 	alarmArr.push(...alarms[0].alarms);
-	console.log('ID = ', id);
 }
 
-// await function getAlarmData()
+function checkExpired(alarm) {
+	console.log('Array in check : ', alarm);
+	let date = new Date();
+	let year = date.getFullYear();
+	let month = date.getMonth() + 1;
+	let day = date.getDate();
+	let hour = date.getHours();
+	let minutes = date.getMinutes();
+	if (
+		alarm.userYear < year ||
+		alarm.userHour < hour ||
+		alarm.userDay < day ||
+		alarm.userMonth < month ||
+		alarm.userHour < hour ||
+		alarm.userMinute < minutes
+	) {
+		return true;
+		// io.to(socketMap[email]).emit('To-client', 'WAKE UP!');
+	} else {
+		return false;
+	}
+}
+
+function checkAlarm(alarm) {
+	let date = new Date();
+	let year = date.getFullYear();
+	let month = date.getMonth() + 1;
+	let day = date.getDate();
+	let hour = date.getHours();
+	let minutes = date.getMinutes();
+
+	if (
+		alarm.userYear == year &&
+		alarm.userHour == hour &&
+		alarm.userDay == day &&
+		alarm.userMonth == month &&
+		alarm.userHour == hour &&
+		alarm.userMinute == minutes
+	) {
+		return true;
+		// io.to(socketMap[email]).emit('To-client', 'WAKE UP!');
+	}
+	return false;
+}

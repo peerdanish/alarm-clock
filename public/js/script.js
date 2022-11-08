@@ -2,12 +2,18 @@ const submitBtn = document.getElementById('submitData');
 const timeBtn = document.getElementById('time');
 const dateBtn = document.getElementById('date');
 const parent = document.getElementById('parent');
+const email = document.getElementById('email');
 submitBtn.addEventListener('click', getData);
 
+let emailVar = email.innerText;
 var socket = io();
 socket.on('connection', () => {
 	console.log('Connection id : ', socket.id);
+	console.log(email.id);
 });
+
+socket.emit('user', emailVar);
+
 socket.on('To-client', (message) => {
 	alert(message);
 });
