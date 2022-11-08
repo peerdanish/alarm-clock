@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Home</title>
+		<link rel="stylesheet" href="/css/style.css" />
+	</head>
+	<body>
+		<h1><%= locals.email ? email: "Null"%></h1>
+		<a href="/logout">Logout</a>
+		<div class="container">
+			<div class="outer-wrapper">
+				<div class="alarms" id="parent">
+					<% alarms.forEach(function(item){%>
+						<div class="alarm-item">
+							<div class="time-top">
+								<div class="time"><%=item.userHour%> : <%=item.userMinute%></div>
+									<div class="date"><%=item.userDay%>-<%=item.userMonth%>-<%=item.userYear%></div>
+							</div>
+							<div class="delete">
+								<button onclick="deleteAlarm(this)" id="<%= item._id%>">Delete</button>
+							</div>
+						</div>
+					<%})%>
+				</div>
+			</div>
+
+			<div class="alarm-set">
+				<div class="time">
+					<input type="time" id="time" name="time" required />
+				</div>
+				<div class="date">
+					<input type="date" name="date" id="date" />
+				</div>
+					<button value="Set now" onclick="getData()" id="submitData"/>Set alarm</button>
+				</div>
+			</div>
+		</div>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="/js/script.js"></script>
+	</body>
+</html>

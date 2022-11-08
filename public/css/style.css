@@ -1,0 +1,19 @@
+body {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+.container {
+	width: 400px;
+	background-color: cyan;
+	min-height: 50vh;
+}
+
+.alarm-item {
+	background-color: gold;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	margin-top: 1rem;
+}

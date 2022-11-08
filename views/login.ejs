@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Login | Todo</title>
+		<link rel="stylesheet" href="../css/formstyle.css" />
+	</head>
+	<body>
+		<div class="form-wrapper">
+			<% if(locals.error) { %>
+			<h1 id="login-head"><%= error%></h1>
+			<% }else{ %>
+			<h1 id="login-head">Login</h1>
+			<%}%>
+			<form method="post" action="/login">
+				<!-- modified here 2:00 pm -->
+				<input type="email" id="email" placeholder="Enter email" name="email" />
+				<input type="password" placeholder="Enter password" name="password" />
+				<input type="submit" value="Login" id="loginbtn" />
+			</form>
+			<!-- <div class="forgot-pass">
+				<a href="/forgotPassword" id="login-page-forgot-btn">Forgot password</a>
+				</form>
+			</div> -->
+			<!-- <p id="divider">OR</p> -->
+			<a href="/signup" id="bottom-login">Click here to signup</a>
+		</div>
+		<!-- <script src="../js/auth.js"></script> -->
+	</body>
+</html>
