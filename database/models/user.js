@@ -8,6 +8,7 @@ const userSchema = new Schema({
 	password: String,
 	alarms: [
 		{
+			label: String,
 			userHour: Number,
 			userYear: Number,
 			userMonth: Number,

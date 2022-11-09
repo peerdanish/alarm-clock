@@ -3,6 +3,7 @@ const timeBtn = document.getElementById('time');
 const dateBtn = document.getElementById('date');
 const parent = document.getElementById('parent');
 const email = document.getElementById('email');
+const label = document.getElementById('label');
 submitBtn.addEventListener('click', getData);
 
 let emailVar = email.innerText;
@@ -33,11 +34,14 @@ function getData(e) {
 	e.preventDefault();
 	let time = timeBtn.value;
 	let date = dateBtn.value;
+	let labelBox = label.value;
+	console.log('Lable : ', labelBox);
 	let [userHour, userMinute] = time.split(':');
 	let [userYear, userMonth, userDay] = date.split('-');
 	let d = new Date();
 	let userSecs = d.getSeconds();
 	let body = {
+		label: labelBox,
 		userHour: parseInt(userHour),
 		userYear: parseInt(userYear),
 		userMonth: parseInt(userMonth),
@@ -62,12 +66,19 @@ function addToList(body) {
 
 	element.innerHTML = `
 		<div class="time-top">
+		<h2 class="alarm-label">${body.label}</h2>
+		<div class="time-div">
+		<h4>Alarm at : </h4>
 			<div class="time">${body.userHour} : ${body.userMinute}</div>
-				<div class="date">${body.userDay}-${body.userMonth}-${body.userYear}</div>
+			</div>
+			<div class="date-div">
+			<h4>Date : </h4>
+			<div class="date">${body.userDay}-${body.userMonth}-${body.userYear}</div>
+			</div>
 			</div>
 		</div>
 		<div class="delete">
-			<button onclick="deleteAlarm(this)">Delete</button>
+			<button onclick="deleteAlarm(this)" class="del-btn">Delete</button>
 		</div>
 		`;
 	parent.appendChild(element);

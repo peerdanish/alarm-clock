@@ -44,11 +44,9 @@ app.route('/').get(async function (req, res) {
 	}
 	let alarmData = await userModel.find({ email: req.session.email });
 	email = req.session.email;
-	// console.log('Inside home one : ', alarmData[0].alarms);]
 	let alarms = alarmData[0].alarms;
 	currentUser = req.session.currentUser;
 	res.render('home', { email: req.session.email, alarms });
-	// startTimers(req.session.currentUser);
 });
 
 app.route('/setAlarm').post(alarmData);
@@ -121,7 +119,6 @@ app
 	.post(deleteAlarm);
 var alarmArr = [];
 var socketMap = {};
-// app.route('/startTimers').get();
 
 //functions
 function checkUser(email, callback) {
@@ -209,6 +206,7 @@ io.on('connection', async (socket) => {
 							);
 						console.log('Email in current : ', email);
 						io.to(socketMap[email]).emit('To-client', 'WAKE UP!');
+						return;
 					}
 				}
 				// console.log('Alarm after : ', alarm);
