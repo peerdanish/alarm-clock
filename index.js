@@ -4,9 +4,10 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
+const uuidv4 = require('uuid').v4;
 
 const cors = require('cors');
-const session = require('express-session');
+// const session = require('express-session');
 const startDb = require('./database/init');
 const userModel = require('./database/models/user');
 
@@ -20,16 +21,18 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-app.use(
-	session({
-		secret: 'keyboard cat',
-		resave: false,
-		saveUninitialized: false,
-		cookie: { secure: false },
-		isLoggedIn: false,
-		username: '',
-	})
-);
+// app.use(
+// 	session({
+// 		secret: 'keyboard cat',
+// 		resave: false,
+// 		saveUninitialized: false,
+// 		cookie: { secure: false },
+// 		isLoggedIn: false,
+// 		username: '',
+// 	})
+// );
+
+const session = {};
 
 var email;
 var currentUser;
@@ -38,15 +41,25 @@ server.listen(3000, function () {
 });
 
 app.route('/').get(async function (req, res) {
-	if (!req.session.isLoggedIn) {
+	const sessionId = req.headers.cookie?.split('=')[1];
+	// console.log('Header ', req.headers);
+	const userSession = session[sessionId];
+	// console.log('SessionId : ', session[sessionId]);
+	// console.log('SessionId : ', session);
+	// console.log('In login after i click login : ', userSession);
+	if (/*!req.session.isLoggedIn*/ !userSession) {
 		res.render('login');
 		return;
 	}
-	let alarmData = await userModel.find({ email: req.session.email });
-	email = req.session.email;
+	const email = userSession.email;
+	let alarmData = await userModel.find({ email: /*req.session.email*/ email });
+	// email = req.session.email;
 	let alarms = alarmData[0].alarms;
-	currentUser = req.session.currentUser;
-	res.render('home', { email: req.session.email, alarms });
+	currentUser = /*session.currentUser*/ userSession.currentUser;
+	res.render('home', {
+		email: /*req.session.email */ userSession.email,
+		alarms,
+	});
 });
 
 app.route('/setAlarm').post(alarmData);
@@ -54,9 +67,13 @@ app.route('/setAlarm').post(alarmData);
 app
 	.route('/login')
 	.get(function (req, res) {
-		console.log('sfhdfhsdhfj');
-		if (req.session.isLoggedIn) {
-			console.log('User id in login ', req.session.isLoggedIn);
+		// console.log('sfhdfhsdhfj');
+		const sessionId = req.headers.cookie?.split('=')[1];
+		// console.log('Sesssion in login : ', session);
+		const userSession = session[sessionId];
+		// console.log('In login after i click logout : ', userSession);
+		if (userSession) {
+			// console.log('User id in login ', req.session.isLoggedIn);
 			res.redirect('/');
 			return;
 		}
@@ -68,12 +85,22 @@ app
 				currentUser = user[0]._id.toString();
 			}
 			if (user) {
-				req.session.isLoggedIn = true;
-				req.session.currentUser = currentUser;
-				req.session.username = user[0].username;
-				req.session.email = user[0].email;
-				email = user[0].email;
-				console.log('EMail : ', req.session.email);
+				const sessionId = uuidv4();
+				session[sessionId] = {
+					username: user[0].username,
+					isLoggedIn: true,
+					email: user[0].email,
+					currentUser,
+				};
+				console.log('Session id = ', session);
+				res.set('Set-Cookie', `session=${sessionId}`);
+				console.log('Session = ', session);
+				// req.session.isLoggedIn = true;
+				// req.session.currentUser = currentUser;
+				// req.session.username = user[0].username;
+				// req.session.email = user[0].email;
+				// email = user[0].email;
+				// console.log('EMail : ', req.session.email);
 				res.redirect('/');
 			} else {
 				res.render('login', {
@@ -220,22 +247,32 @@ io.on('connection', async (socket) => {
 });
 
 async function alarmData(req, res) {
+	const sessionId = req.headers.cookie?.split('=')[1];
+	const userSession = session[sessionId];
+	console.log('REQ BODY : ', req.body);
 	let alarmObj = await userModel
-		.find({ _id: req.session.currentUser })
+		.find({ _id: userSession.currentUser })
 		.updateOne({
 			$push: { alarms: req.body },
 		});
 	alarmArr.push(req.body);
+	return;
 }
 
 function logoutUser(req, res) {
-	req.session.destroy();
+	const sessionId = req.headers.cookie?.split('=')[1];
+	delete session[sessionId];
+	// res.set('Set-cookie',`session=null`);
+	res.clearCookie();
+	// req.session.destroy();
 	res.redirect('/login');
 }
 
 async function deleteAlarm(req, res) {
+	const sessionId = req.headers.cookie?.split('=')[1];
+	const userSession = session[sessionId];
 	let id = req.params.id;
-	let userId = req.session.currentUser;
+	let userId = userSession?.currentUser;
 	await userModel
 		.find({ _id: userId })
 		.update({}, { $pull: { alarms: { _id: id } } });

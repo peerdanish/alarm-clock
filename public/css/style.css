@@ -144,6 +144,8 @@ header a:hover {
 	width: 100px;
 	background-color: #e09f3e;
 	border: none;
+	border-radius: 5px;
+	width: 120px;
 }
 .middle-set input:focus {
 	border: none;
@@ -163,6 +165,7 @@ header a:hover {
 	border-radius: 5px;
 	padding-right: 5px;
 	padding-left: 5px;
+	/* background-color: #e09f3e; */
 }
 #label:focus {
 	outline: none;
@@ -176,6 +179,8 @@ header a:hover {
 	border-radius: 5px;
 	font-weight: bold;
 	transition: 0.2s all;
+	width: 200px;
+	margin-top: 10px;
 }
 #submitData:hover {
 	cursor: pointer;

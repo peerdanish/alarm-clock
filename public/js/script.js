@@ -49,10 +49,13 @@ function getData(e) {
 		userMinute: parseInt(userMinute),
 		isExpired: false,
 	};
+	if (!(labelBox.length && time && date)) {
+		alert("Fields can't be empty");
+		return;
+	}
 	body = validAlarm(body);
-	console.log('In script afte validation : ', body);
 	addToList(body);
-	socket.emit('user-data', body);
+	// socket.emit('user-data', body);
 
 	let request = new XMLHttpRequest();
 	request.open('POST', '/setAlarm');
